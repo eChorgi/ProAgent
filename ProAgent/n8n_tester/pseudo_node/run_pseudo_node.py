@@ -32,5 +32,8 @@ def run_pseudo_workflow(input_data: list, constant_workflow: n8nPythonWorkflow) 
     else:
         return_list = []
     final_return_data = fill_return_data(return_list)
+    print("-"*30)
+    print(final_return_data)
+
 
     return final_return_data

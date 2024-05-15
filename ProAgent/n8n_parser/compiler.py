@@ -233,6 +233,7 @@ class Compiler():
             content=content,
             tool_name=tool_name,
         )
+        print("in n8n compiler.py Line236:tool_input = "+str(type(tool_input))+str(tool_input))
         for react_key in ["thought","plan","criticism"]:
             if react_key in tool_input.keys():
                 action.__setattr__(react_key, tool_input[react_key])
@@ -241,7 +242,9 @@ class Compiler():
         action.tool_input = tool_input
         print_action_base(action)
 
-
+        if "functions" not in tool_input.keys():
+            tool_status_code = ToolCallStatus.NoSuchFunction
+            return action
 
         tool_status_code = ToolCallStatus.ToolCallSuccess
         tool_output = ""
@@ -401,6 +404,7 @@ class Compiler():
         Raises:
             AssertionError: If the "functions" key is not present in `tool_input`.
         """
+
         assert "functions" in tool_input.keys()
         tool_call_status = []
         tool_call_result = []

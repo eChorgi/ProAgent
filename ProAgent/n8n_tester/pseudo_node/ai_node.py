@@ -27,7 +27,9 @@ def run_ai_completion(params_list:list) -> str:
                                             functions=None,
                                             default_completion_kwargs=completion_kwargs,
                                             recorder=None)
-        content = result["choices"][0]["message"]['content']
+        print("in ai_node.py Line30: result = "+str(result))
+        content = result.choices[0].message.content
+        print("in ai_node.py Line32: content = "+str(content))
         return_list.append(
             {
                 "json": {

@@ -44,22 +44,36 @@ class RunningRecoder():
         Returns:
             None
         """
-
+        #llm 记录缓存
         self.llm_record_cache = [] # Get cached records
 
+        #llm接口id
         self.llm_interface_id = 0
+
+        #llm服务器缓存
         self.llm_server_cache = [] # Runtime records
+
+        #工具调用id
         self.tool_call_id = 0
+
+        #工具调用缓存
         self.tool_call_cache = []
-        self.is_cached = True # Assume to be true at first
+
+        #是否进行过缓存-是
+        self.is_cached = True # Assume to be true at first 假定初始为True
+
+        #新的开始
         self.newly_start = True
 
+        #当前时间数值
         now = int(round(time.time()*1000))
         strip = time.strftime('%Y_%m_%d_%H_%M_%S',time.localtime(now/1000))
 
+        #记录保存目录
         self.record_root_dir = os.path.join(record_base_dir,strip)
         os.makedirs(self.record_root_dir,exist_ok=True)
 
+        #记录保存模式
         print(colored(f"Recorder Mode: {CONFIG.environment.name}", color='yellow'))
 
         for subdir_name in ["LLM_inout_pair","tool_call_logs"]:
@@ -98,12 +112,18 @@ class RunningRecoder():
         Returns:
             None
         """
+
+        #提示从本地读取
         logger.typewriter_log(
             "load from a disk record",
             Fore.RED,
             record_dir,
         )
+
+        #新的开始-否
         self.newly_start = False
+
+        #record_dir目录中的全部数据读入llm_record_cache缓存
         for dir_name in os.listdir(record_dir):
             if dir_name == "LLM_inout_pair":
                 inout_pair_list = os.listdir(os.path.join(record_dir,dir_name))

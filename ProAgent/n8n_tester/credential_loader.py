@@ -3,7 +3,7 @@ import json
 from typing import Dict, Any
 
 class Credentials():
-    def __init__(self, base_file_path= "./ProAgent/n8n_tester/credentials"):
+    def __init__(self, base_file_path= os.path.abspath(r".\ProAgent\n8n_tester\credentials")):
         """
         Initializes the object with the given base file path. If no base file path is provided,
         the default path "./ProAgent/n8n_tester/credentials" will be used.

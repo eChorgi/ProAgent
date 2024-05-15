@@ -18,7 +18,7 @@ MouseInfo==0.1.3
 mss==9.0.1
 multidict==6.0.4
 omegaconf==2.3.0
-openai==0.28.1
+openai
 packaging==23.2
 Pillow==9.5.0
 PyGetWindow==0.0.9

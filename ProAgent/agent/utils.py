@@ -24,7 +24,8 @@ from ProAgent.running_recorder import RunningRecoder
 from ProAgent.utils import LLMStatusCode
 
 
-def _chat_completion_request_atomic(**json_data):
+def _chat_completion_request_atomic(client, **json_data):
+    
     """
     Creates a chat completion request with the given JSON data.
     
@@ -34,15 +35,14 @@ def _chat_completion_request_atomic(**json_data):
     Returns:
         The response from the OpenAI ChatCompletion API.
     """
-    openai.api_key = os.environ.get('OPENAI_API_KEY')
-    openai.api_base = os.environ.get('OPENAI_API_BASE')
-    response = openai.ChatCompletion.create(
+    print(json_data)
+    response = client.chat.completions.create(
                 **json_data,
             )
     return response
 
-@func_set_timeout(60)
-def _chat_completion_request_without_retry(default_completion_kwargs, messages, functions=None,function_call=None, stop=None,restrict_cache_query=True ,recorder:RunningRecoder=None, **args):
+@func_set_timeout(120)
+def _chat_completion_request_without_retry(client, default_completion_kwargs, messages, functions=None,function_call=None, stop=None,restrict_cache_query=True ,recorder:RunningRecoder=None, **args):
     """
     Executes a chat completion request without retry.
 
@@ -62,9 +62,15 @@ def _chat_completion_request_without_retry(default_completion_kwargs, messages, 
     Raises:
         Exception: If an exception occurs during the execution.
     """
+    
     for message in messages:
-        if "content" not in message.keys():
-            message["content"] = ""
+        if isinstance(message, dict):
+            if "content" not in message.keys():
+                message["content"] = ""
+        else:
+            if message.content == None:
+                message.content = ""
+    
 
     json_data = default_completion_kwargs
     json_data["messages"] = messages
@@ -92,9 +98,8 @@ def _chat_completion_request_without_retry(default_completion_kwargs, messages, 
             response = None
 
         if response == None:
-            response = _chat_completion_request_atomic(**json_data)
-            response = json.loads(str(response))
-
+            response = _chat_completion_request_atomic(client=client, **json_data)
+        print("respnse_raw = "+str(response))
         if recorder:
             recorder.regist_llm_inout(base_kwargs = default_completion_kwargs,
                                     messages=messages, 
@@ -120,7 +125,7 @@ def _chat_completion_request_without_retry(default_completion_kwargs, messages, 
                                     output_data=f"Exception: {e}")
         return e, LLMStatusCode.ERROR
 
-def _chat_completion_request(**args):
+def _chat_completion_request(client, **args):
     """
     Generates a chat completion request with the given arguments and attempts to retrieve the completed output.
 
@@ -130,13 +135,14 @@ def _chat_completion_request(**args):
     Returns:
         The completed output if the request is successful, otherwise None.
     """
-
+    
+    #重试
     for i in range(3):
         if i > 0:
             logger.info(f"LLM retry for the {i+1}'th time")
 
         try:
-            output, output_code = _chat_completion_request_without_retry(**args)
+            output, output_code = _chat_completion_request_without_retry(client = client, **args)
             if output_code == LLMStatusCode.SUCCESS:
                 return output
         except func_timeout.exceptions.FunctionTimedOut: #TLE

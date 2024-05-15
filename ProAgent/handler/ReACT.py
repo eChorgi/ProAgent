@@ -54,20 +54,30 @@ class ReACTHandler():
         Note: This function runs indefinitely until interrupted.
         """
         while True:
+            #无限循环
+            
+            #当前信息
             messages = []
+
+            #添加默认提示词
             messages.append({"role":"system","content": deepcopy(react_prompt.system_prompt_1)})
             messages.append({"role":"system","content": deepcopy(react_prompt.system_prompt_2)})
 
+            #生成动态提示词
             specific_prompt = deepcopy(react_prompt.system_prompt_3)
             specific_prompt = specific_prompt.replace("{{user_query}}", self.query.print_self())
             specific_prompt = specific_prompt.replace("{{flatten_tools}}", self.compiler.print_flatten_tools())
             messages.append({"role":"system","content": specific_prompt})
 
-            # cut some messages down, only allow for last_num messages
+            # 原注释：cut some messages down, only allow for last_num messages
+            # 减少一些消息，只在最后一次消息
             last_num = 3
             for k, (assistant_message, parsed_action) in enumerate(zip(self.messages, self.actions)):
+                #如果不是最后一次处理
                 if k < len(self.messages) - last_num:
                     continue
+
+                #添加所有消息和function
                 messages.append(assistant_message)
                 messages.append({
                     "role":"function",
@@ -75,33 +85,42 @@ class ReACTHandler():
                     "content": parsed_action.tool_output,
                 })
             
-
+            #用户提示词
             user_prompt = deepcopy(react_prompt.user_prompt)
 
+            #新增指示提示词
             refine_prompt = ""
             if len(self.refine_prompt) > 0:
                 refine_prompt = f"The user have some additional requirements to your work. Please refine your work based on the following requirements:\n ```\n{deepcopy(self.refine_prompt)}```\n"
 
+            #修改用户提示词，增加新增指示
             user_prompt = user_prompt.replace("{{refine_prompt}}", refine_prompt)
 
-            # print highlighted code
+            # 原注释：print highlighted code
             highlighted_code = highlight_code(self.compiler.code_runner.print_clean_code(indent=4))
             user_prompt_colored = user_prompt.split("{{now_codes}}")
             user_prompt_colored = highlighted_code.join(user_prompt_colored)
+            # 加颜色输出当前代码
             logger.typewriter_log(user_prompt_colored)
 
             user_prompt = user_prompt.replace("{{now_codes}}", self.compiler.code_runner.print_code())
 
+            # 提示词中增加用户提示词
             messages.append({"role":"user","content": user_prompt})
             
+            # 获取内在函数
             functions = get_intrinsic_functions()
 
+            #新建agent
             agent = OpenAIFunction()
             content, function_name, function_arguments, message = agent.parse(messages=messages,
                                                             functions=functions,
                                                             default_completion_kwargs=CONFIG.default_completion_kwargs,
                                                             recorder=self.recorder)
+            
             action = self.compiler.tool_call_handle(content, function_name, function_arguments)
             self.messages.append(message)
+            print("="*40+"\nnowMessageLens = "+str(len(self.messages)))
             self.actions.append(action)
+            print("="*40+"\nnowActionLens = "+str(len(self.actions)))
             # exit()
